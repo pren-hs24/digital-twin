@@ -1,6 +1,5 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
-import { WeightedGraph } from "@/logic/graph";
 import { weightedGraph } from "@/logic/pren/graph";
 import { dijkstraWithWeightedNodes } from "@/logic/pathfinding";
 import { SPEED_M_PER_S } from "@/logic/pren/constants";
@@ -40,5 +39,16 @@ export const useNavigatorStore = defineStore("navigator", () => {
         };
     });
 
-    return { path, network, goTo, obstaclesInPath, estimatedDuration };
+    const estimatedDistance = computed(() => {
+        return weightedGraph.pathPhysicalDistance(path.value);
+    });
+
+    return {
+        path,
+        network,
+        goTo,
+        obstaclesInPath,
+        estimatedDuration,
+        estimatedDistance,
+    };
 });

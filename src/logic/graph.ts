@@ -88,7 +88,7 @@ export class WeightedGraph {
         return graph;
     }
 
-    public pathDistance(path: string[]) {
+    public pathPhysicalDistance(path: string[]) {
         if (path.length < 2) return 0;
 
         let sum = 0;
@@ -96,6 +96,14 @@ export class WeightedGraph {
         for (let i = 0; i < path.length - 1; i++) {
             sum += this._actualWeight(this.getEdge(path[i], path[i + 1]));
         }
+
+        return sum;
+    }
+
+    public pathDistance(path: string[]) {
+        if (path.length < 2) return 0;
+
+        let sum = this.pathPhysicalDistance(path);
 
         sum += this.nodePenaltiesInPath(path);
 

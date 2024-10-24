@@ -12,7 +12,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 
-    --fg: rgba(255, 255, 255, 0.87);
+    --fg: #e1e1e1;
+    --fg-mute: #a1a1a1;
     --bg: #242424;
     --bg-mute: #1a1a1a;
     --border: #333;
@@ -29,6 +30,7 @@
 @media (prefers-color-scheme: light) {
     :root {
         --fg: #213547;
+        --fg-mute: #6c7a89;
         --bg: #ffffff;
         --bg-mute: #f9f9f9;
         --border: #ddd;

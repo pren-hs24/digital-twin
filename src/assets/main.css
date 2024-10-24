@@ -104,7 +104,11 @@ button,
     border: 1px solid transparent;
     border-radius: 8px;
     border-color: var(--border);
-    background-color: var(--bg-mute);
+    background-color: var(--bg);
+
+    .card {
+        background-color: var(--bg-mute);
+    }
 }
 
 .editor {
@@ -134,4 +138,18 @@ button,
     & h1 {
         margin-bottom: 0;
     }
+}
+
+.muted {
+    color: var(--fg-mute);
+}
+
+.standout {
+    font-weight: 900;
+    color: var(--fg);
+    font-size: 1.5rem;
+}
+
+.clickable {
+    cursor: pointer;
 }

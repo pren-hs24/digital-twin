@@ -16,7 +16,7 @@ export enum Position {
 const evaluatePosition = (
     position: Position,
     containerAxis: number,
-    margin: number = 15
+    margin: number = 15,
 ) => {
     const min = margin;
     const max = containerAxis - 2 * margin;
@@ -65,7 +65,7 @@ export class Graph {
     private createNodes() {
         for (const node of Object.keys(this._weightedGraph.graph)) {
             this.nodes[node] = new Node(this.topLayer, node, (node) =>
-                this.onToggleNode?.(node)
+                this.onToggleNode?.(node),
             );
         }
     }
@@ -80,7 +80,7 @@ export class Graph {
             this.nodes[from],
             this.nodes[to],
             this._weightedGraph,
-            (edge, selected) => this.onSelectEdge?.(edge, selected)
+            (edge, selected) => this.onSelectEdge?.(edge, selected),
         );
         this.edges[to][from] = this.edges[from][to];
     }

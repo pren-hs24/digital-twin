@@ -113,6 +113,8 @@ export class Edge implements EdgeDefinition {
                 );
             }) || path.length === 1;
 
+        this._selected = false;
+
         this.updateWeight();
         this.updateEdgeStroke(this, isPartOfRoute);
     }

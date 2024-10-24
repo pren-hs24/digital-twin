@@ -7,16 +7,16 @@ export const CLEAR_OBSTACLE_PENALTY_WEIGHT =
 
 export const NODE_PENALTY_WEIGHT = SPEED_M_PER_S * NODE_PENALTY_S;
 
-const primary = window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "#fff"
-    : "#000";
+const style = getComputedStyle(document.body);
 
 export const COLOUR = {
-    ACCENT: "#535bf2",
-    ACCENT_DARK: "#030b92",
-    PRIMARY: primary,
-    GREEN: "#00bd7e",
-    GREEN_DARK: "#00a86b",
-    YELLOW: "#c7aa19",
-    RED: "#e85454",
+    ACCENT: style.getPropertyValue("--accent"),
+    ACCENT_DARK: style.getPropertyValue("--accent-dk"),
+    PRIMARY: style.getPropertyValue("--fg"),
+    PRIMARY_MUTE: style.getPropertyValue("--fg-mute"),
+    PRIMARY_CONTRAST: style.getPropertyValue("--bg"),
+    GREEN: style.getPropertyValue("--green"),
+    GREEN_DARK: style.getPropertyValue("--green-dk"),
+    YELLOW: style.getPropertyValue("--yellow"),
+    RED: style.getPropertyValue("--red"),
 };

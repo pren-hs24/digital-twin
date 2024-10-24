@@ -1,4 +1,5 @@
 import Konva from "konva";
+import { COLOUR } from "../pren/constants";
 
 export const createLabel = (x: number, y: number, text: string) => {
     const label = new Konva.Label({
@@ -8,9 +9,9 @@ export const createLabel = (x: number, y: number, text: string) => {
 
     label.add(
         new Konva.Tag({
-            fill: "white",
+            fill: COLOUR.PRIMARY_CONTRAST,
             cornerRadius: 4,
-        })
+        }),
     );
 
     label.add(
@@ -20,9 +21,9 @@ export const createLabel = (x: number, y: number, text: string) => {
             padding: 4,
             fontFamily:
                 "Inter, system-ui, Avenir, Helvetica, Arial, sans-serif",
-            fill: "#black",
+            fill: COLOUR.PRIMARY_MUTE,
             align: "center",
-        })
+        }),
     );
 
     return label;

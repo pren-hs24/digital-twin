@@ -79,7 +79,7 @@ const navigatePath = (path: string[]) => {
     });
 };
 
-// @ts-ignore
+// @ts-expect-error window
 window.navigateTo = (target: string) => {
     if (target === "START") {
         navigatePath([]);
@@ -105,7 +105,7 @@ window.navigateTo = (target: string) => {
     navigatePath(path);
 };
 
-// @ts-ignore
+// @ts-expect-error window
 window.traverseAllEdges = () => {
     const path = [] as string[];
 
