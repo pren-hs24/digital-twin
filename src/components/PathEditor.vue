@@ -60,7 +60,7 @@
 
 <template>
     <div
-        class="path-info"
+        class="path-editor"
         v-if="edges.length"
     >
         <div class="group">
@@ -106,23 +106,19 @@
 </template>
 
 <style scoped>
-    .path-info {
+    .path-editor {
         width: 100%;
-    }
 
-    .route-infos {
         display: flex;
-        align-items: center;
-        gap: 2em;
+        flex-direction: column;
+        gap: 1em;
         width: 100%;
 
-        > div {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .clickable {
-            margin-left: auto;
+        .group {
+            display: grid;
+            grid-template-columns: max-content 1fr;
+            align-items: center;
+            gap: 1em;
         }
     }
 

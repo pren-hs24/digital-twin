@@ -7,6 +7,7 @@ import {
 } from "../pren/constants";
 import JSConfetti from "js-confetti";
 import { DriveSensor, type IDriveListener } from "../engine";
+import { computed, ref } from "vue";
 
 const jsConfetti = new JSConfetti();
 
@@ -55,20 +56,20 @@ const angle = (from: Point, to: Point) => {
     const B = from;
     const C = to;
 
-    let dx = C.x - B.x;
-    let dy = -1 * (C.y - B.y);
-    let mbc = dy / dx;
+    const dx = C.x - B.x;
+    const dy = -1 * (C.y - B.y);
+    const mbc = dy / dx;
 
     if (dx == 0) {
-        let rad = dy > 0 ? 0 : Math.PI;
+        const rad = dy > 0 ? 0 : Math.PI;
         return { rad, deg: (rad * 180) / Math.PI };
     }
     if (dy == 0) {
-        let rad = dx > 0 ? Math.PI / 2 : (3 * Math.PI) / 2;
+        const rad = dx > 0 ? Math.PI / 2 : (3 * Math.PI) / 2;
         return { rad, deg: (rad * 180) / Math.PI };
     }
 
-    let radbc = Math.atan(Math.abs(mbc));
+    const radbc = Math.atan(Math.abs(mbc));
     let rad = Infinity;
 
     if (dx > 0 && dy < 0) {
@@ -80,7 +81,7 @@ const angle = (from: Point, to: Point) => {
     } else {
         rad = (3 * Math.PI) / 2 - radbc;
     }
-    let deg = (rad * 180) / Math.PI;
+    const deg = (rad * 180) / Math.PI;
 
     return { rad, deg };
 };
@@ -114,39 +115,20 @@ const optimiseCurrentDegree = (deg: number, current: number) => {
 };
 
 const setCarColour = (colour: string) => {
-    car.children.map((x: any) => (x as Konva.Shape).fill(colour));
+    car.children.map((x) => (x as Konva.Shape).fill(colour));
 };
 
-export const prepareDrive = (
-    stage: Konva.Stage,
-    path: string[],
-    graph: Graph,
-) => {
-    if (!path.length) {
-        car.hide();
-        return {
-            sensor: null,
-            listener: null,
-        };
-    } else {
-        car.show();
-    }
-
-    addCars(stage);
-    const nodes = path.map((node) => graph.getNode(node));
-
-    // move the car to the first node
-    car.x(nodes[0].x);
-    car.y(nodes[0].y);
-    car.rotation(CAR_DIRECTION.DOWN);
-
+export const prepareDrive = (graph: Graph) => {
+    const stage = graph.stage;
     const sensor = new DriveSensor();
+    const path = ref<string[]>([]);
+    const nodes = computed(() => path.value.map((node) => graph.getNode(node)));
 
     const moveToNextNode = (i: number = 1) => {
-        if (i >= nodes.length) return;
+        if (i >= nodes.value.length) return;
 
-        const prevNode = path[i - 1];
-        const node = path[i];
+        const prevNode = path.value[i - 1];
+        const node = path.value[i];
         const edge = graph.weightedGraph.getEdge(prevNode, node);
         const distance = edge.weight;
         const duration = distance / SPEED_M_PER_S;
@@ -204,15 +186,10 @@ export const prepareDrive = (
     };
 
     const rotateToNextNode = (i: number = 0) => {
-        if (i >= nodes.length - 1) {
-            jsConfetti.addConfetti();
-            return;
-        }
-
         if (i == -1) {
             const initialAngle = angle(
-                { x: nodes[0].x, y: nodes[0].y },
-                { x: nodes[1].x, y: nodes[1].y },
+                { x: nodes.value[0].x, y: nodes.value[0].y },
+                { x: nodes.value[1].x, y: nodes.value[1].y },
             ).deg;
 
             return new Promise<void>((resolve) => {
@@ -221,6 +198,7 @@ export const prepareDrive = (
                     rotation: initialAngle,
                     duration: degToDuration(initialAngle - car.rotation()),
                     onFinish: () => {
+                        console.log("initial rotation done", sensor);
                         sensor.turnCompleted();
                         resolve();
                     },
@@ -229,8 +207,8 @@ export const prepareDrive = (
             });
         }
 
-        const node = path[i];
-        const nextNode = path[i + 1];
+        const node = path.value[i];
+        const nextNode = path.value[i + 1];
 
         const shape = graph.getNode(node);
         const nextShape = graph.getNode(nextNode);
@@ -257,10 +235,32 @@ export const prepareDrive = (
         });
     };
 
+    const start = (newPath: string[]) => {
+        path.value = newPath;
+        position = 0;
+
+        if (!path.value.length) {
+            car.hide();
+            return {
+                sensor: null,
+                listener: null,
+            };
+        } else {
+            car.show();
+        }
+
+        addCars(stage);
+
+        // move the car to the first node
+        car.x(nodes.value[0].x);
+        car.y(nodes.value[0].y);
+        car.rotation(CAR_DIRECTION.DOWN);
+    };
+
     let position = 0;
 
     const getIndexFromNode = (node: string) => {
-        const targetIndex = position + path.slice(position).indexOf(node);
+        const targetIndex = position + path.value.slice(position).indexOf(node);
         position = targetIndex;
         return targetIndex;
     };
@@ -268,10 +268,12 @@ export const prepareDrive = (
     return {
         sensor,
         listener: {
+            start,
             navigateToPoint: (target: string) => {
+                console.log("navigateToPoint", target);
                 return moveToNextNode(getIndexFromNode(target));
             },
-            takeExit: (from: string | null, on: string, to: string) => {
+            takeExit: (from: string | null, on: string) => {
                 if (from == null) {
                     return rotateToNextNode(-1);
                 }

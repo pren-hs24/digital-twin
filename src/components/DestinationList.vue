@@ -15,8 +15,9 @@
             <div
                 v-for="target in ['A', 'B', 'C']"
                 :key="target"
-                @click="navigator.goTo(target)"
+                @click="navigator.locked ? null : navigator.goTo(target)"
                 class="fav"
+                :disabled="navigator.locked"
             >
                 <span class="icon material-symbols-rounded">location_on</span>
                 <span>{{ target }}</span>
@@ -56,7 +57,6 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 1;
 
             .icon {
                 background: var(--accent);
@@ -76,6 +76,15 @@
                 &:hover {
                     background: var(--accent-dk);
                     cursor: pointer;
+                }
+            }
+
+            &[disabled="true"] {
+                cursor: not-allowed;
+
+                .icon {
+                    background: var(--border);
+                    cursor: not-allowed;
                 }
             }
         }

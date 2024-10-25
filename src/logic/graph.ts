@@ -94,7 +94,7 @@ export class WeightedGraph {
         let sum = 0;
 
         for (let i = 0; i < path.length - 1; i++) {
-            sum += this._actualWeight(this.getEdge(path[i], path[i + 1]));
+            sum += this.getEdge(path[i], path[i + 1]).weight;
         }
 
         return sum;

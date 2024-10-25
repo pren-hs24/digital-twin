@@ -3,11 +3,11 @@ export interface IDriveListener {
     takeExit: (
         from: string | null,
         on: string,
-        to: string
+        to: string,
     ) => void | Promise<void>;
 
     selectTarget?: (target: string) => void | Promise<void>;
-    start?: () => void | Promise<void>;
+    start?: (path: string[]) => void | Promise<void>;
     emergencyStop?: () => void | Promise<void>;
     scanGraph?: () => void | Promise<void>;
     findPath?: () => void | Promise<void>;
@@ -19,29 +19,59 @@ export interface IDriveListener {
 }
 
 export interface IDriveSensor {
-    onObstacle: (callback: () => void) => void;
-    onObstacleCleared: (callback: () => void) => void;
-    onTargetReached: (callback: () => void) => void;
-    onTurnCompleted: (callback: () => void) => void;
+    addOnObstacleListener: (callback: () => void) => void;
+    addOnObstacleClearedListener: (callback: () => void) => void;
+    addOnTargetReachedListener: (callback: () => void) => void;
+    addOnTurnCompletedListener: (callback: () => void) => void;
+
+    removeOnObstacleListener: (callback: () => void) => void;
+    removeOnObstacleClearedListener: (callback: () => void) => void;
+    removeOnTargetReachedListener: (callback: () => void) => void;
+    removeOnTurnCompletedListener: (callback: () => void) => void;
 }
 
-export class DriveSensor {
+export class DriveSensor implements IDriveSensor {
     private onObstacleCallbacks: (() => void)[] = [];
     private onObstacleClearedCallbacks: (() => void)[] = [];
     private onTargetReachedCallbacks: (() => void)[] = [];
     private onTurnCompletedCallbacks: (() => void)[] = [];
 
-    onObstacle(callback: () => void) {
+    addOnObstacleListener(callback: () => void) {
         this.onObstacleCallbacks.push(callback);
     }
-    onObstacleCleared(callback: () => void) {
+    addOnObstacleClearedListener(callback: () => void) {
         this.onObstacleClearedCallbacks.push(callback);
     }
-    onTargetReached(callback: () => void) {
+    addOnTargetReachedListener(callback: () => void) {
         this.onTargetReachedCallbacks.push(callback);
     }
-    onTurnCompleted(callback: () => void) {
+    addOnTurnCompletedListener(callback: () => void) {
         this.onTurnCompletedCallbacks.push(callback);
+    }
+
+    removeOnObstacleListener(callback: () => void) {
+        const index = this.onObstacleCallbacks.indexOf(callback);
+        if (index === -1) return;
+
+        this.onObstacleCallbacks.splice(index, 1);
+    }
+    removeOnObstacleClearedListener(callback: () => void) {
+        const index = this.onObstacleClearedCallbacks.indexOf(callback);
+        if (index === -1) return;
+
+        this.onObstacleClearedCallbacks.splice(index, 1);
+    }
+    removeOnTargetReachedListener(callback: () => void) {
+        const index = this.onTargetReachedCallbacks.indexOf(callback);
+        if (index === -1) return;
+
+        this.onTargetReachedCallbacks.splice(index, 1);
+    }
+    removeOnTurnCompletedListener(callback: () => void) {
+        const index = this.onTurnCompletedCallbacks.indexOf(callback);
+        if (index === -1) return;
+
+        this.onTurnCompletedCallbacks.splice(index, 1);
     }
 
     obstacle() {
@@ -58,11 +88,21 @@ export class DriveSensor {
     }
 }
 
-class ListenerManager {
+export class ListenerManager {
     private listeners: IDriveListener[];
 
     constructor(listeners: IDriveListener[]) {
         this.listeners = listeners;
+    }
+
+    addListener(listener: IDriveListener) {
+        this.listeners.push(listener);
+    }
+
+    removeListener(listener: IDriveListener) {
+        const i = this.listeners.indexOf(listener);
+        if (i == -1) return;
+        this.listeners.splice(i, 1);
     }
 
     async call<T extends keyof IDriveListener>(
@@ -76,10 +116,10 @@ class ListenerManager {
                     const func = listener[method];
                     if (func) {
                         return (func as (...args: any) => any).bind(listener)(
-                            ...args
+                            ...args,
                         );
                     }
-                })
+                }),
         );
     }
 }
@@ -128,7 +168,7 @@ interface Future {
     resolve: (() => void) | null;
 }
 
-class SensorManager extends DriveSensor {
+export class SensorManager extends DriveSensor {
     private sensors: IDriveSensor[];
 
     private obstacleFuture: Future | null = null;
@@ -141,60 +181,89 @@ class SensorManager extends DriveSensor {
 
         this.sensors = sensors;
 
-        this.sensors.forEach((sensor) => {
-            sensor.onObstacle(() => {
-                this.obstacle();
+        this.sensors.forEach((sensor) => this.initSensor(sensor));
+    }
 
-                if (this.obstacleFuture) {
-                    this.obstacleFuture.resolve?.();
-                    this.obstacleFuture = null;
-                } else {
-                    this.obstacleFuture = {
-                        alreadyResolved: true,
-                        resolve: null,
-                    };
-                }
-            });
-            sensor.onObstacleCleared(() => {
-                this.obstacleCleared();
+    private initSensor(sensor: IDriveSensor) {
+        sensor.addOnObstacleListener(this.onObstacle);
+        sensor.addOnObstacleClearedListener(this.onObstacleCleared);
+        sensor.addOnTargetReachedListener(this.onTargetReached);
+        sensor.addOnTurnCompletedListener(this.onTurnCompleted);
+    }
+    private deinitSensor(sensor: IDriveSensor) {
+        sensor.removeOnObstacleListener(this.onObstacle);
+        sensor.removeOnObstacleClearedListener(this.onObstacleCleared);
+        sensor.removeOnTargetReachedListener(this.onTargetReached);
+        sensor.removeOnTurnCompletedListener(this.onTurnCompleted);
+    }
 
-                if (this.obstacleClearedFuture) {
-                    this.obstacleClearedFuture.resolve?.();
-                    this.obstacleClearedFuture = null;
-                } else {
-                    this.obstacleClearedFuture = {
-                        alreadyResolved: true,
-                        resolve: null,
-                    };
-                }
-            });
-            sensor.onTargetReached(() => {
-                this.targetReached();
+    private onObstacle = () => {
+        this.obstacle();
 
-                if (this.targetReachedFuture) {
-                    this.targetReachedFuture.resolve?.();
-                    this.targetReachedFuture = null;
-                } else {
-                    this.targetReachedFuture = {
-                        alreadyResolved: true,
-                        resolve: null,
-                    };
-                }
-            });
-            sensor.onTurnCompleted(() => {
-                this.turnCompleted();
+        if (this.obstacleFuture) {
+            this.obstacleFuture.resolve?.();
+            this.obstacleFuture = null;
+        } else {
+            this.obstacleFuture = {
+                alreadyResolved: true,
+                resolve: null,
+            };
+        }
+    };
 
-                if (this.turnCompletedFuture) {
-                    this.turnCompletedFuture.resolve?.();
-                    this.turnCompletedFuture = null;
-                } else {
-                    this.turnCompletedFuture = {
-                        alreadyResolved: true,
-                        resolve: null,
-                    };
-                }
-            });
-        });
+    private onObstacleCleared = () => {
+        this.obstacleCleared();
+
+        if (this.obstacleClearedFuture) {
+            this.obstacleClearedFuture.resolve?.();
+            this.obstacleClearedFuture = null;
+        } else {
+            this.obstacleClearedFuture = {
+                alreadyResolved: true,
+                resolve: null,
+            };
+        }
+    };
+
+    private onTargetReached = () => {
+        this.targetReached();
+
+        if (this.targetReachedFuture) {
+            this.targetReachedFuture.resolve?.();
+            this.targetReachedFuture = null;
+        } else {
+            this.targetReachedFuture = {
+                alreadyResolved: true,
+                resolve: null,
+            };
+        }
+    };
+
+    private onTurnCompleted = () => {
+        this.turnCompleted();
+
+        if (this.turnCompletedFuture) {
+            this.turnCompletedFuture.resolve?.();
+            this.turnCompletedFuture = null;
+        } else {
+            this.turnCompletedFuture = {
+                alreadyResolved: true,
+                resolve: null,
+            };
+        }
+    };
+
+    addSensor(sensor: IDriveSensor) {
+        this.sensors.push(sensor);
+        this.initSensor(sensor);
+    }
+
+    removeSensor(sensor: IDriveSensor) {
+        const index = this.sensors.indexOf(sensor);
+        if (index === -1) return;
+
+        this.deinitSensor(sensor);
+        this.sensors.splice(index, 1);
     }
 
     waitForObstacle() {
@@ -256,43 +325,40 @@ class SensorManager extends DriveSensor {
 
 export const drive = async (options: {
     path: string[];
-    sensors: IDriveSensor[];
-    listeners: IDriveListener[];
+    sensors: SensorManager;
+    actors: ListenerManager;
 }) => {
-    const { path, sensors, listeners } = options;
+    const { path, sensors, actors } = options;
 
-    const manager = new ListenerManager(listeners);
-    const sensorManager = new SensorManager(sensors);
-
-    sensorManager.onObstacle(() => {
-        manager.call("closeToObstacle");
+    sensors.addOnObstacleListener(() => {
+        actors.call("closeToObstacle");
     });
-    sensorManager.onObstacleCleared(() => {
-        manager.call("obstacleCleared");
+    sensors.addOnObstacleClearedListener(() => {
+        actors.call("obstacleCleared");
     });
 
-    await manager.call("selectTarget", path[path.length - 1]);
-    await manager.call("start");
-    await manager.call("scanGraph");
-    await manager.call("findPath");
+    await actors.call("selectTarget", path[path.length - 1]);
+    await actors.call("start", path);
+    await actors.call("scanGraph");
+    await actors.call("findPath");
 
-    await manager.call("takeExit", null, path[0], path[1]);
-    await sensorManager.waitForTurnCompleted();
-    await manager.call("exitTaken");
+    await actors.call("takeExit", null, path[0], path[1]);
+    await sensors.waitForTurnCompleted();
+    await actors.call("exitTaken");
 
     for (let i = 1; i < path.length - 1; i++) {
-        await manager.call("navigateToPoint", path[i]);
-        await sensorManager.waitForTargetReached();
-        await manager.call("navigatedToPoint");
+        await actors.call("navigateToPoint", path[i]);
+        await sensors.waitForTargetReached();
+        await actors.call("navigatedToPoint");
 
-        await manager.call("takeExit", path[i - 1], path[i], path[i + 1]);
-        await sensorManager.waitForTurnCompleted();
-        await manager.call("exitTaken");
+        await actors.call("takeExit", path[i - 1], path[i], path[i + 1]);
+        await sensors.waitForTurnCompleted();
+        await actors.call("exitTaken");
     }
 
-    await manager.call("navigateToPoint", path[path.length - 1]);
-    await sensorManager.waitForTargetReached();
-    await manager.call("navigatedToPoint");
+    await actors.call("navigateToPoint", path[path.length - 1]);
+    await sensors.waitForTargetReached();
+    await actors.call("navigatedToPoint");
 
-    await manager.call("arriveAtDestination");
+    await actors.call("arriveAtDestination");
 };

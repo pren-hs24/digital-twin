@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { onMounted, ref, watch } from "vue";
+    import { onMounted, onUnmounted, ref, watch } from "vue";
     import { getStage } from "../logic/konva";
     import { Graph, type EdgeDefinition } from "../logic/konva/graph";
     import { createGraph } from "../logic/pren/graph";
@@ -7,12 +7,17 @@
     import { useNavigatorStore } from "@/stores/navigator";
     import PathInfo from "@/components/PathInfo.vue";
     import PathEditor from "@/components/PathEditor.vue";
+    import { type IDriveListener, type IDriveSensor } from "@/logic/engine";
+    import { prepareDrive } from "@/logic/konva/car";
 
     const konvaContainer = ref<HTMLDivElement>();
     const stage = ref<Konva.Stage>();
     const graph = ref<Graph>();
     const navigator = useNavigatorStore();
     const selectedEdges = ref<EdgeDefinition[]>([]);
+
+    let sensor: IDriveSensor | null = null;
+    let listener: IDriveListener | null = null;
 
     onMounted(() => {
         stage.value = getStage(konvaContainer.value!);
@@ -26,14 +31,34 @@
             if (selected) {
                 selectedEdges.value = [...selectedEdges.value, edge];
             } else {
-                selectedEdges.value = selectedEdges.value.filter(
-                    (e) => e.nodeA !== edge.nodeA || e.nodeB !== edge.nodeB,
+                selectedEdges.value = selectedEdges.value.filter((other) =>
+                    [edge.nodeA, edge.nodeB].some(
+                        (n) => ![other.nodeA, other.nodeB].includes(n),
+                    ),
                 );
                 graph.value!.markRoute(navigator.path);
             }
         };
 
         graph.value!.markRoute(navigator.path);
+
+        const { sensor: carSensor, listener: carDriver } = prepareDrive(
+            graph.value,
+        );
+        sensor = carSensor;
+        listener = carDriver;
+
+        navigator.sensors.addSensor(sensor);
+        navigator.actors.addListener(listener);
+    });
+
+    onUnmounted(() => {
+        if (sensor) {
+            navigator.sensors.removeSensor(sensor);
+        }
+        if (listener) {
+            navigator.actors.removeListener(listener);
+        }
     });
 
     const updateGraphEdges = (event: { edges: EdgeDefinition[] }) => {
@@ -52,26 +77,34 @@
 </script>
 
 <template>
-    <div class="card">
-        <div
-            ref="konvaContainer"
-            id="konva-container"
-        ></div>
-        <aside>
-            <div class="card">
-                <PathInfo />
-            </div>
-            <div class="card">
-                <PathEditor
-                    :edges="selectedEdges"
-                    @update="updateGraphEdges"
-                />
-            </div>
-        </aside>
+    <div class="main">
+        <div class="card">
+            <div
+                ref="konvaContainer"
+                id="konva-container"
+            ></div>
+            <aside>
+                <div class="card">
+                    <PathInfo />
+                </div>
+                <div class="card">
+                    <PathEditor
+                        :edges="selectedEdges"
+                        @update="updateGraphEdges"
+                    />
+                </div>
+            </aside>
+        </div>
     </div>
 </template>
 
 <style scoped>
+    .main {
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+    }
+
     .card {
         width: calc(100% - 2em);
         height: 100%;
