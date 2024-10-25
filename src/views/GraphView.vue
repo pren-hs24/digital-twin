@@ -9,6 +9,7 @@
     import PathEditor from "@/components/PathEditor.vue";
     import { type IDriveListener, type IDriveSensor } from "@/logic/engine";
     import { prepareDrive } from "@/logic/konva/car";
+    import LogView from "@/components/LogView.vue";
 
     const konvaContainer = ref<HTMLDivElement>();
     const stage = ref<Konva.Stage>();
@@ -94,6 +95,9 @@
                     />
                 </div>
             </aside>
+        </div>
+        <div class="card">
+            <LogView />
         </div>
     </div>
 </template>
