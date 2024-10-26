@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import AppNavigation from './components/AppNavigation.vue'
-import DestinationList from "./components/DestinationList.vue";
+import Sidebar from "./components/MainSidebar.vue";
 </script>
 
 <template>
-  <header>
-    <AppNavigation />
-  </header>
   <div class="body">
-    <DestinationList />
+    <Sidebar />
     <RouterView />
   </div>
 </template>
@@ -17,11 +13,19 @@ import DestinationList from "./components/DestinationList.vue";
 <style scoped>
 .body {
   position: relative;
-  margin: 1em;
-  margin-top: 0;
+  padding: 1em;
 
   display: grid;
   grid-template-columns: max-content 1fr;
+  align-items: start;
   gap: 1em;
+  max-height: calc(100svh - 2em);
+  overflow: auto;
+}
+
+@media screen and (max-width: 750px) {
+  .body {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
