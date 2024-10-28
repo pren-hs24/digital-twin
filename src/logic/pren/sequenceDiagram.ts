@@ -27,6 +27,8 @@ export class SequenceDiagram implements IDriveListener {
     }
 
     selectTarget(target: string) {
+        this.reset();
+
         this.mermaidCode += `    User->>+Car: Select target ${target}\n`;
         this.mermaidCode += `    Car->>-Engine: Select target ${target}\n`;
         this.sync();
