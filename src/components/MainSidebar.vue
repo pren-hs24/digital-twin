@@ -30,9 +30,11 @@ const navigator = useNavigatorStore();
 div.navigator {
     position: sticky;
     top: 0;
+    margin: 1em;
+    margin-right: 0;
 
     /* no idea why it needs to be 4.1, instead of 4 */
-    height: calc(100svh - 4.1em);
+    height: calc(100svh - 4em);
 
     padding: 1em;
     background: var(--bg);

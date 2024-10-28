@@ -105,6 +105,7 @@ watch(
     display: flex;
     flex-direction: column;
     gap: 1em;
+    width: calc(100% - 2px);
 }
 
 .card {
