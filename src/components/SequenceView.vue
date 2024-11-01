@@ -20,9 +20,8 @@ onMounted(() => {
         ? "dark"
         : "default";
 
-    mermaid.initialize({ startOnLoad: true, theme });
     navigator.actors.addListener(logger);
-
+    mermaid.initialize({ startOnLoad: false, theme });
 });
 
 onUnmounted(() => {
