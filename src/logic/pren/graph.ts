@@ -17,7 +17,7 @@ weightedGraph.addEdge("A", "W", 2);
 weightedGraph.addEdge("A", "X", 2);
 weightedGraph.addEdge("A", "Y", 1.5);
 weightedGraph.addEdge("B", "Y", 1.5);
-weightedGraph.addEdge("B", "C"), 2;
+weightedGraph.addEdge("B", "C", 2);
 weightedGraph.addEdge("C", "Y", 1.5);
 weightedGraph.addEdge("C", "Z", 2);
 weightedGraph.addEdge("W", "START", 1.5);

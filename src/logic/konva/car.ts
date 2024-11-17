@@ -125,6 +125,30 @@ export const prepareDrive = (graph: Graph) => {
     const nodes = computed(() => path.value.map((node) => graph.getNode(node)));
 
     const moveToNextNode = (i: number = 1) => {
+        if (i == 0) {
+            const node = path.value[i];
+            const shape = graph.getNode(node);
+
+            const targetX = shape.x;
+            const targetY = shape.y;
+
+            return new Promise<void>((resolve) => {
+                const onTargetReached = () => {
+                    sensor.targetReached();
+                    resolve();
+                };
+
+                const tween = new Konva.Tween({
+                    node: car,
+                    x: targetX,
+                    y: targetY,
+                    duration: 0.5 / SPEED_M_PER_S,
+                    onFinish: onTargetReached,
+                });
+                tween.play();
+            });
+        }
+
         if (i >= nodes.value.length) return;
 
         const prevNode = path.value[i - 1];
@@ -253,7 +277,7 @@ export const prepareDrive = (graph: Graph) => {
 
         // move the car to the first node
         car.x(nodes.value[0].x);
-        car.y(nodes.value[0].y);
+        car.y(15);
         car.rotation(CAR_DIRECTION.DOWN);
     };
 
@@ -270,7 +294,6 @@ export const prepareDrive = (graph: Graph) => {
         listener: {
             start,
             navigateToPoint: (target: string) => {
-                console.log("navigateToPoint", target);
                 return moveToNextNode(getIndexFromNode(target));
             },
             takeExit: (from: string | null, on: string) => {

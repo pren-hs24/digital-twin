@@ -13,10 +13,10 @@ export const dijkstra = (options: IOptions) => {
     const nodes = new PriorityQueue<string>();
     const distances: Record<string, number> = {};
     const previous: Record<string, string | null> = {};
-    let path = []; //to return at end
+    const path = []; //to return at end
     let smallest;
     //build up initial state
-    for (let vertex in graph.graph) {
+    for (const vertex in graph.graph) {
         if (vertex === from) {
             distances[vertex] = 0;
             nodes.enqueue(vertex, 0);
@@ -39,12 +39,12 @@ export const dijkstra = (options: IOptions) => {
             break;
         }
         if (smallest || distances[smallest] !== Infinity) {
-            for (let neighbor in graph.graph[smallest]) {
+            for (const neighbor in graph.graph[smallest]) {
                 //find neighboring node
-                let nextNode = graph.graph[smallest][neighbor];
+                const nextNode = graph.graph[smallest][neighbor];
                 //calculate new distance to neighboring node
-                let candidate = distances[smallest] + nextNode.weight;
-                let nextNeighbor = nextNode.node;
+                const candidate = distances[smallest] + nextNode.weight;
+                const nextNeighbor = nextNode.node;
                 if (candidate < distances[nextNeighbor]) {
                     //updating new smallest distance to neighbor
                     distances[nextNeighbor] = candidate;
@@ -64,10 +64,10 @@ export const dijkstraWithWeightedNodes = (options: IOptions) => {
     const nodes = new PriorityQueue<string>();
     const distances: Record<string, number> = {};
     const previous: Record<string, string | null> = {};
-    let path = []; //to return at end
+    const path = []; //to return at end
     let smallest;
     //build up initial state
-    for (let vertex in graph.graph) {
+    for (const vertex in graph.graph) {
         if (vertex === from) {
             distances[vertex] = 0;
             nodes.enqueue(vertex, 0);
@@ -90,12 +90,12 @@ export const dijkstraWithWeightedNodes = (options: IOptions) => {
             break;
         }
         if (smallest || distances[smallest] !== Infinity) {
-            for (let neighbor in graph.graph[smallest]) {
+            for (const neighbor in graph.graph[smallest]) {
                 //find neighboring node
-                let nextNode = graph.graph[smallest][neighbor];
+                const nextNode = graph.graph[smallest][neighbor];
                 //calculate new distance to neighboring node
                 let candidate = distances[smallest] + nextNode.weight;
-                let nextNeighbor = nextNode.node;
+                const nextNeighbor = nextNode.node;
 
                 // smallest is not from, add penalty
                 if (![from, to].includes(nextNeighbor)) {

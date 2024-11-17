@@ -16,18 +16,18 @@ export enum Position {
 const evaluatePosition = (
     position: Position,
     containerAxis: number,
-    margin: number = 15,
+    margin: number = 50,
 ) => {
     const min = margin;
-    const max = containerAxis - 2 * margin;
-    const fifth = containerAxis / 5;
+    const max = containerAxis - margin;
+    const fifth = max / 5;
 
     if (position == Position.MIN) return min;
-    if (position == Position.FIFTH) return 2 * fifth;
-    if (position == Position.TWO_FIFTH) return fifth;
+    if (position == Position.FIFTH) return 2 * fifth + margin;
+    if (position == Position.TWO_FIFTH) return fifth + margin;
     if (position == Position.CENTRE) return containerAxis / 2;
-    if (position == Position.THREE_FIFTH) return 3 * fifth;
-    if (position == Position.FOUR_FIFTH) return 4 * fifth;
+    if (position == Position.THREE_FIFTH) return 3 * fifth + margin;
+    if (position == Position.FOUR_FIFTH) return 4 * fifth + margin;
     if (position == Position.MAX) return max;
 
     return 0;

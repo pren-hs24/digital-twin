@@ -115,9 +115,9 @@ export class ListenerManager {
                 .map((listener) => {
                     const func = listener[method];
                     if (func) {
-                        return (func as (...args: any) => any).bind(listener)(
-                            ...args,
-                        );
+                        return (func as (...args: unknown[]) => unknown).bind(
+                            listener,
+                        )(...args);
                     }
                 }),
         );
@@ -341,6 +341,9 @@ export const drive = async (options: {
     await actors.call("start", path);
     await actors.call("scanGraph");
     await actors.call("findPath");
+
+    await actors.call("navigateToPoint", path[0]);
+    await sensors.waitForTargetReached();
 
     await actors.call("takeExit", null, path[0], path[1]);
     await sensors.waitForTurnCompleted();
