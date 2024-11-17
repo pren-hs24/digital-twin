@@ -99,6 +99,11 @@ export class Edge implements EdgeDefinition {
         return this._nodeB.name;
     }
 
+    public deselect() {
+        this._selected = false;
+        this.updateEdgeStroke(this, false);
+    }
+
     public update(path: string[]) {
         // if any fromKey is followed by toKey in the path
         // or if any toKey is followed by fromKey in the path

@@ -65,6 +65,7 @@ onUnmounted(() => {
 
 const updateGraphEdges = (event: { edges: EdgeDefinition[] }) => {
     event.edges.forEach((edge) => {
+        graph.value!.deselectEdge(edge);
         graph.value!.updateEdge(edge);
     });
     selectedEdges.value = [];

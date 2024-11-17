@@ -112,6 +112,9 @@ export class Graph {
     updateEdge(edge: EdgeDefinition) {
         this.edges[edge.nodeA][edge.nodeB].update(this.path);
     }
+    deselectEdge(edge: EdgeDefinition) {
+        this.edges[edge.nodeA][edge.nodeB].deselect();
+    }
 
     public get weightedGraph() {
         return this._weightedGraph;
