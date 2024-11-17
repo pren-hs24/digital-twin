@@ -15,7 +15,7 @@ export class PriorityQueue<T> {
         this.values = [];
     }
     enqueue(val: T, priority: number) {
-        let newNode = new Node(val, priority);
+        const newNode = new Node(val, priority);
         this.values.push(newNode);
         this.bubbleUp();
     }
@@ -23,8 +23,8 @@ export class PriorityQueue<T> {
         let idx = this.values.length - 1;
         const element = this.values[idx];
         while (idx > 0) {
-            let parentIdx = Math.floor((idx - 1) / 2);
-            let parent = this.values[parentIdx];
+            const parentIdx = Math.floor((idx - 1) / 2);
+            const parent = this.values[parentIdx];
             if (element.priority >= parent.priority) break;
             this.values[parentIdx] = element;
             this.values[idx] = parent;
@@ -46,8 +46,8 @@ export class PriorityQueue<T> {
         const element = this.values[0];
 
         while (true) {
-            let leftChildIdx = 2 * idx + 1;
-            let rightChildIdx = 2 * idx + 2;
+            const leftChildIdx = 2 * idx + 1;
+            const rightChildIdx = 2 * idx + 2;
             let leftChild, rightChild;
             let swap = null;
 
