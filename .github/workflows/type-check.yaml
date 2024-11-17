@@ -1,4 +1,4 @@
-name: eslint
+name: type-check
 on: push
 jobs:
     build:
@@ -7,5 +7,5 @@ jobs:
             - uses: actions/checkout@v4
             - name: Install modules
               run: npm ci
-            - name: Run ESLint
-              run: npx eslint .
+            - name: Run TypeScript type check
+              run: npm run type-check
