@@ -277,7 +277,7 @@ export const prepareDrive = (graph: Graph) => {
 
         // move the car to the first node
         car.x(nodes.value[0].x);
-        car.y(15);
+        car.y(20);
         car.rotation(CAR_DIRECTION.DOWN);
     };
 
