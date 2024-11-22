@@ -54,7 +54,10 @@ export class SequenceDiagram implements IDriveListener {
 
     findPath() {
         this.mermaidCode += `    Engine->>+Pathfinding: Find path\n`;
-        this.mermaidCode += `    Pathfinding-->>-Engine: Path found\n`;
+        setTimeout(() => {
+            this.mermaidCode += `    Pathfinding-->>-Engine: Path found\n`;
+            this.sync();
+        }, 100);
         this.sync();
     }
 

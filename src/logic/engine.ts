@@ -323,6 +323,10 @@ export class SensorManager extends DriveSensor {
     }
 }
 
+export const waitFor = async (ms: number) => {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 export const drive = async (options: {
     path: string[];
     sensors: SensorManager;
@@ -340,10 +344,12 @@ export const drive = async (options: {
     await actors.call("selectTarget", path[path.length - 1]);
     await actors.call("start", path);
     await actors.call("scanGraph");
+    await waitFor(1500);
     await actors.call("findPath");
 
     await actors.call("navigateToPoint", path[0]);
     await sensors.waitForTargetReached();
+    await actors.call("navigatedToPoint");
 
     await actors.call("takeExit", null, path[0], path[1]);
     await sensors.waitForTurnCompleted();
