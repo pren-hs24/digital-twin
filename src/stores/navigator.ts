@@ -50,6 +50,10 @@ export const useNavigatorStore = defineStore("navigator", () => {
         navigatePath(path);
     };
 
+    const randomiseGraph = () => {
+        weightedGraph.randomise();
+    };
+
     const obstaclesInPath = computed(() => {
         return weightedGraph.obstaclesInPath(path.value);
     });
@@ -70,6 +74,7 @@ export const useNavigatorStore = defineStore("navigator", () => {
         path,
         network,
         goTo,
+        randomiseGraph,
         obstaclesInPath,
         estimatedDuration,
         estimatedDistance,

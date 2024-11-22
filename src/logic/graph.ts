@@ -19,6 +19,8 @@ export class WeightedGraph {
     obstructedEdges = [] as EdgeDefinition[];
     disabledEdges = [] as EdgeDefinition[];
 
+    public onChange: (() => void) | null = null;
+
     constructor() {
         this._graph = {};
     }
@@ -97,7 +99,7 @@ export class WeightedGraph {
             sum += this.getEdge(path[i], path[i + 1]).weight;
         }
 
-        return sum;
+        return Math.round(sum * 100) / 100;
     }
 
     public pathDistance(path: string[]) {
@@ -122,5 +124,43 @@ export class WeightedGraph {
 
     private nodePenaltiesInPath(path: string[]) {
         return (path.length - 2) * NODE_PENALTY_WEIGHT * 0.5;
+    }
+
+    private randNumber(min: number = 0, max: number = 1, digits: number = 1) {
+        return (
+            Math.round((Math.random() * (max - min) + min) * 10 ** digits) /
+            10 ** digits
+        );
+    }
+
+    randomise() {
+        this.disabledNodes = [];
+        const nodesDone = [] as string[];
+
+        for (const node in this._graph) {
+            for (const edge of this._graph[node]) {
+                if (nodesDone.includes(edge.node)) continue;
+
+                edge.weight = this.randNumber(0.5, 2.5); // 0 to 2.5
+                edge.disabled = this.randNumber() < 0.2;
+
+                // other way
+                const otherEdge = this._graph[edge.node].find(
+                    (x) => x.node == node,
+                )!;
+                otherEdge.weight = edge.weight;
+                otherEdge.disabled = edge.disabled;
+            }
+
+            if (!["START", "A", "B", "C"].includes(node)) {
+                if (this.randNumber() < 0.2) {
+                    this.disabledNodes.push(node);
+                }
+            }
+
+            nodesDone.push(node);
+        }
+
+        this.onChange?.();
     }
 }

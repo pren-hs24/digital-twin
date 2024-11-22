@@ -56,11 +56,23 @@ export class Graph {
         this.nodes = {};
         this.edges = {};
 
+        this._weightedGraph.onChange = this.updateAll.bind(this);
+
         this.createNodes();
         this.createEdges();
         this._stage.add(this.backLayer);
         this._stage.add(this.topLayer);
         this._stage.draw();
+    }
+    private updateAll() {
+        for (const node in this.nodes) {
+            this.nodes[node].update(
+                this.weightedGraph.disabledNodes.includes(node),
+            );
+            for (const edge of this._weightedGraph.graph?.[node] ?? []) {
+                this.updateEdge({ nodeA: node, nodeB: edge.node });
+            }
+        }
     }
     private createNodes() {
         for (const node of Object.keys(this._weightedGraph.graph)) {

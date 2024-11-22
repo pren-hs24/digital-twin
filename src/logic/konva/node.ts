@@ -22,6 +22,11 @@ export class Node implements Point {
         this._label = this.create(layer);
     }
 
+    update(disabled: boolean) {
+        this._enabled = !disabled;
+        this.circle.fill(disabled ? COLOUR.RED : COLOUR.PRIMARY);
+    }
+
     private create(layer: Konva.Layer) {
         const label = new Konva.Label();
         label.add(
