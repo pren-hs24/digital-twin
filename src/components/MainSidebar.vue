@@ -1,8 +1,12 @@
 <script setup lang="ts">
     import { useNavigatorStore } from "@/stores/navigator";
     import Logo from "@/assets/logo.svg";
+    import SliderNumberInput from "./SliderNumberInput.vue";
+    import { useRandomiserStore } from "@/stores/randomiser";
 
     const navigator = useNavigatorStore();
+
+    const randomiser = useRandomiserStore();
 </script>
 <template>
     <div class="navigator">
@@ -34,7 +38,32 @@
                     <span>{{ target }}</span>
                 </div>
             </div>
-
+        </div>
+        <div class="item">
+            <details>
+                <summary>Settings</summary>
+                <SliderNumberInput
+                    v-model="randomiser.pEdgeDisabled"
+                    label="Edge Disabled %"
+                    :min="0"
+                    :max="1"
+                    :step="0.05"
+                />
+                <SliderNumberInput
+                    v-model="randomiser.pObstacle"
+                    label="Obstacle %"
+                    :min="0"
+                    :max="1"
+                    :step="0.05"
+                />
+                <SliderNumberInput
+                    v-model="randomiser.pNodeDisabled"
+                    label="Node Disabled %"
+                    :min="0"
+                    :max="1"
+                    :step="0.05"
+                />
+            </details>
             <button @click="navigator.randomiseGraph">Randomise Graph</button>
         </div>
     </div>
@@ -60,6 +89,10 @@
         gap: 1em;
     }
 
+    summary {
+        cursor: pointer;
+    }
+
     .item {
         display: flex;
         flex-direction: column;
@@ -69,6 +102,12 @@
             font-size: 1rem;
             font-weight: 900;
             color: var(--text-muted);
+        }
+
+        &:not(:last-child) {
+            margin-bottom: 1em;
+            padding-bottom: 1em;
+            border-bottom: 1px solid var(--border);
         }
     }
 

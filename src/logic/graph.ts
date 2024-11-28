@@ -1,3 +1,4 @@
+import { useRandomiserStore } from "@/stores/randomiser";
 import { type EdgeDefinition } from "./konva/graph";
 import {
     CLEAR_OBSTACLE_PENALTY_WEIGHT,
@@ -136,13 +137,15 @@ export class WeightedGraph {
     randomise() {
         this.disabledNodes = [];
         const nodesDone = [] as string[];
+        const settings = useRandomiserStore();
 
         for (const node in this._graph) {
             for (const edge of this._graph[node]) {
                 if (nodesDone.includes(edge.node)) continue;
 
                 edge.weight = this.randNumber(0.5, 2.5); // 0 to 2.5
-                edge.disabled = this.randNumber() < 0.2;
+                edge.disabled = this.randNumber() < settings.pEdgeDisabled;
+                edge.obstructed = this.randNumber() < settings.pObstacle;
 
                 // other way
                 const otherEdge = this._graph[edge.node].find(
@@ -150,10 +153,11 @@ export class WeightedGraph {
                 )!;
                 otherEdge.weight = edge.weight;
                 otherEdge.disabled = edge.disabled;
+                otherEdge.obstructed = edge.obstructed;
             }
 
             if (!["START", "A", "B", "C"].includes(node)) {
-                if (this.randNumber() < 0.2) {
+                if (this.randNumber() < settings.pNodeDisabled) {
                     this.disabledNodes.push(node);
                 }
             }
