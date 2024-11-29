@@ -7,7 +7,8 @@ import {
 } from "../pren/constants";
 import JSConfetti from "js-confetti";
 import { DriveSensor, type IDriveListener } from "../engine";
-import { computed, ref } from "vue";
+import { computed } from "vue";
+import { useNavigatorStore } from "@/stores/navigator";
 
 const jsConfetti = new JSConfetti();
 
@@ -121,12 +122,14 @@ const setCarColour = (colour: string) => {
 export const prepareDrive = (graph: Graph) => {
     const stage = graph.stage;
     const sensor = new DriveSensor();
-    const path = ref<string[]>([]);
-    const nodes = computed(() => path.value.map((node) => graph.getNode(node)));
+    const navigator = useNavigatorStore();
+    const nodes = computed(() =>
+        navigator.path.map((node) => graph.getNode(node)),
+    );
 
     const moveToNextNode = (i: number = 1) => {
         if (i == 0) {
-            const node = path.value[i];
+            const node = navigator.path[i];
             const shape = graph.getNode(node);
 
             const targetX = shape.x;
@@ -151,9 +154,10 @@ export const prepareDrive = (graph: Graph) => {
 
         if (i >= nodes.value.length) return;
 
-        const prevNode = path.value[i - 1];
-        const node = path.value[i];
-        const edge = graph.weightedGraph.getEdge(prevNode, node);
+        const prevNode = navigator.path[i - 1];
+        const node = navigator.path[i];
+        const edge = graph.weightedGraph.getEdge(prevNode, node)!;
+
         const distance = edge.weight;
         const duration = distance / SPEED_M_PER_S;
 
@@ -231,8 +235,8 @@ export const prepareDrive = (graph: Graph) => {
             });
         }
 
-        const node = path.value[i];
-        const nextNode = path.value[i + 1];
+        const node = navigator.path[i];
+        const nextNode = navigator.path[i + 1];
 
         const shape = graph.getNode(node);
         const nextShape = graph.getNode(nextNode);
@@ -259,11 +263,11 @@ export const prepareDrive = (graph: Graph) => {
         });
     };
 
-    const start = (newPath: string[]) => {
-        path.value = newPath;
+    const start = () => {
+        const navigator = useNavigatorStore();
         position = 0;
 
-        if (!path.value.length) {
+        if (!navigator.path.length) {
             car.hide();
             return {
                 sensor: null,
@@ -284,7 +288,8 @@ export const prepareDrive = (graph: Graph) => {
     let position = 0;
 
     const getIndexFromNode = (node: string) => {
-        const targetIndex = position + path.value.slice(position).indexOf(node);
+        const targetIndex =
+            position + navigator.path.slice(position).indexOf(node);
         position = targetIndex;
         return targetIndex;
     };

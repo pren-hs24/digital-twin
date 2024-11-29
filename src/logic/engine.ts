@@ -1,3 +1,6 @@
+import { useNavigatorStore } from "@/stores/navigator";
+import type { WeightedGraph } from "./graph";
+
 export interface IDriveListener {
     navigateToPoint: (point: string) => void | Promise<void>;
     takeExit: (
@@ -7,10 +10,11 @@ export interface IDriveListener {
     ) => void | Promise<void>;
 
     selectTarget?: (target: string) => void | Promise<void>;
-    start?: (path: string[]) => void | Promise<void>;
+    start?: () => void | Promise<void>;
     emergencyStop?: () => void | Promise<void>;
     scanGraph?: () => void | Promise<void>;
-    findPath?: () => void | Promise<void>;
+    findPath?: (graph: WeightedGraph, target: string) => void | Promise<void>;
+    foundPath?: (path: string[]) => void | Promise<void>;
     arriveAtDestination?: () => void | Promise<void>;
     closeToObstacle?: () => void | Promise<void>;
     obstacleCleared?: () => void | Promise<void>;
@@ -23,11 +27,13 @@ export interface IDriveSensor {
     addOnObstacleClearedListener: (callback: () => void) => void;
     addOnTargetReachedListener: (callback: () => void) => void;
     addOnTurnCompletedListener: (callback: () => void) => void;
+    addOnPathFoundListener: (callback: (path: string[]) => void) => void;
 
     removeOnObstacleListener: (callback: () => void) => void;
     removeOnObstacleClearedListener: (callback: () => void) => void;
     removeOnTargetReachedListener: (callback: () => void) => void;
     removeOnTurnCompletedListener: (callback: () => void) => void;
+    removeOnPathFoundListener: (callback: (path: string[]) => void) => void;
 }
 
 export class DriveSensor implements IDriveSensor {
@@ -35,6 +41,7 @@ export class DriveSensor implements IDriveSensor {
     private onObstacleClearedCallbacks: (() => void)[] = [];
     private onTargetReachedCallbacks: (() => void)[] = [];
     private onTurnCompletedCallbacks: (() => void)[] = [];
+    private onPathFoundCallbacks: ((path: string[]) => void)[] = [];
 
     addOnObstacleListener(callback: () => void) {
         this.onObstacleCallbacks.push(callback);
@@ -47,6 +54,9 @@ export class DriveSensor implements IDriveSensor {
     }
     addOnTurnCompletedListener(callback: () => void) {
         this.onTurnCompletedCallbacks.push(callback);
+    }
+    addOnPathFoundListener(callback: (path: string[]) => void) {
+        this.onPathFoundCallbacks.push(callback);
     }
 
     removeOnObstacleListener(callback: () => void) {
@@ -73,6 +83,12 @@ export class DriveSensor implements IDriveSensor {
 
         this.onTurnCompletedCallbacks.splice(index, 1);
     }
+    removeOnPathFoundListener(callback: (path: string[]) => void) {
+        const index = this.onPathFoundCallbacks.indexOf(callback);
+        if (index === -1) return;
+
+        this.onPathFoundCallbacks.splice(index, 1);
+    }
 
     obstacle() {
         this.onObstacleCallbacks.forEach((callback) => callback());
@@ -85,6 +101,9 @@ export class DriveSensor implements IDriveSensor {
     }
     turnCompleted() {
         this.onTurnCompletedCallbacks.forEach((callback) => callback());
+    }
+    pathFound(path: string[]) {
+        this.onPathFoundCallbacks.forEach((callback) => callback(path));
     }
 }
 
@@ -175,6 +194,7 @@ export class SensorManager extends DriveSensor {
     private obstacleClearedFuture: Future | null = null;
     private targetReachedFuture: Future | null = null;
     private turnCompletedFuture: Future | null = null;
+    private pathFoundFuture: Future | null = null;
 
     constructor(sensors: IDriveSensor[]) {
         super();
@@ -189,12 +209,14 @@ export class SensorManager extends DriveSensor {
         sensor.addOnObstacleClearedListener(this.onObstacleCleared);
         sensor.addOnTargetReachedListener(this.onTargetReached);
         sensor.addOnTurnCompletedListener(this.onTurnCompleted);
+        sensor.addOnPathFoundListener(this.onPathFound);
     }
     private deinitSensor(sensor: IDriveSensor) {
         sensor.removeOnObstacleListener(this.onObstacle);
         sensor.removeOnObstacleClearedListener(this.onObstacleCleared);
         sensor.removeOnTargetReachedListener(this.onTargetReached);
         sensor.removeOnTurnCompletedListener(this.onTurnCompleted);
+        sensor.removeOnPathFoundListener(this.onPathFound);
     }
 
     private onObstacle = () => {
@@ -247,6 +269,21 @@ export class SensorManager extends DriveSensor {
             this.turnCompletedFuture = null;
         } else {
             this.turnCompletedFuture = {
+                alreadyResolved: true,
+                resolve: null,
+            };
+        }
+    };
+
+    private onPathFound = (path: string[]) => {
+        console.log("path found", path);
+        this.pathFound(path);
+
+        if (this.pathFoundFuture) {
+            this.pathFoundFuture.resolve?.();
+            this.pathFoundFuture = null;
+        } else {
+            this.pathFoundFuture = {
                 alreadyResolved: true,
                 resolve: null,
             };
@@ -321,18 +358,39 @@ export class SensorManager extends DriveSensor {
             };
         });
     }
+
+    waitForPathFound() {
+        console.log("waiting for path found", this.pathFoundFuture);
+
+        if (this.pathFoundFuture?.alreadyResolved) {
+            this.pathFoundFuture = null;
+            console.log("path found already resolved");
+            return Promise.resolve();
+        }
+
+        return new Promise<void>((resolve) => {
+            this.pathFoundFuture = {
+                alreadyResolved: false,
+                resolve,
+            };
+        });
+    }
 }
 
 export const waitFor = async (ms: number) => {
     return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
-export const drive = async (options: {
-    path: string[];
+const roadsight = async (options: {
     sensors: SensorManager;
     actors: ListenerManager;
+    target: string;
 }) => {
-    const { path, sensors, actors } = options;
+    const { target, sensors, actors } = options;
+    const navigator = useNavigatorStore();
+
+    const first = "START";
+    navigator.path = [first, target];
 
     sensors.addOnObstacleListener(() => {
         actors.call("closeToObstacle");
@@ -340,34 +398,121 @@ export const drive = async (options: {
     sensors.addOnObstacleClearedListener(() => {
         actors.call("obstacleCleared");
     });
+    sensors.addOnPathFoundListener((p) => {
+        navigator.path = p;
+    });
 
-    await actors.call("selectTarget", path[path.length - 1]);
-    await actors.call("start", path);
+    await actors.call("selectTarget", target);
+    await actors.call("start");
     await actors.call("scanGraph");
     await waitFor(1500);
-    await actors.call("findPath");
 
-    await actors.call("navigateToPoint", path[0]);
+    await actors.call("findPath", navigator.network.copy(), target);
+
+    await actors.call("navigateToPoint", first);
     await sensors.waitForTargetReached();
     await actors.call("navigatedToPoint");
 
-    await actors.call("takeExit", null, path[0], path[1]);
+    await sensors.waitForPathFound();
+
+    await actors.call("takeExit", null, navigator.path[0], navigator.path[1]);
     await sensors.waitForTurnCompleted();
     await actors.call("exitTaken");
 
-    for (let i = 1; i < path.length - 1; i++) {
-        await actors.call("navigateToPoint", path[i]);
+    for (let i = 1; i < navigator.path.length - 1; i++) {
+        await actors.call("navigateToPoint", navigator.path[i]);
         await sensors.waitForTargetReached();
         await actors.call("navigatedToPoint");
 
-        await actors.call("takeExit", path[i - 1], path[i], path[i + 1]);
+        await actors.call(
+            "takeExit",
+            navigator.path[i - 1],
+            navigator.path[i],
+            navigator.path[i + 1],
+        );
         await sensors.waitForTurnCompleted();
         await actors.call("exitTaken");
     }
 
-    await actors.call("navigateToPoint", path[path.length - 1]);
+    await actors.call(
+        "navigateToPoint",
+        navigator.path[navigator.path.length - 1],
+    );
     await sensors.waitForTargetReached();
     await actors.call("navigatedToPoint");
 
     await actors.call("arriveAtDestination");
+};
+
+const roadsense = async (options: {
+    sensors: SensorManager;
+    actors: ListenerManager;
+    target: string;
+}) => {
+    const { target, sensors, actors } = options;
+    const navigator = useNavigatorStore();
+
+    const first = "START";
+    navigator.path = [first, target];
+
+    sensors.addOnObstacleListener(() => {
+        actors.call("closeToObstacle");
+    });
+    sensors.addOnObstacleClearedListener(() => {
+        actors.call("obstacleCleared");
+    });
+    sensors.addOnPathFoundListener((p) => {
+        navigator.path = p;
+    });
+
+    await actors.call("selectTarget", target);
+    await actors.call("start");
+    await actors.call("scanGraph");
+    await waitFor(1500);
+
+    await actors.call("findPath", navigator.network.copy(), target);
+
+    await actors.call("navigateToPoint", first);
+    await sensors.waitForTargetReached();
+    await actors.call("navigatedToPoint");
+
+    console.log("finding path...");
+
+    await sensors.waitForPathFound();
+
+    console.log(navigator.path);
+
+    await actors.call("takeExit", null, navigator.path[0], navigator.path[1]);
+    console.log("exit taken?");
+    await sensors.waitForTurnCompleted();
+    await actors.call("exitTaken");
+
+    for (let i = 1; i < navigator.path.length - 1; i++) {
+        await actors.call("navigateToPoint", navigator.path[i]);
+        await sensors.waitForTargetReached();
+        await actors.call("navigatedToPoint");
+
+        await actors.call(
+            "takeExit",
+            navigator.path[i - 1],
+            navigator.path[i],
+            navigator.path[i + 1],
+        );
+        await sensors.waitForTurnCompleted();
+        await actors.call("exitTaken");
+    }
+
+    await actors.call(
+        "navigateToPoint",
+        navigator.path[navigator.path.length - 1],
+    );
+    await sensors.waitForTargetReached();
+    await actors.call("navigatedToPoint");
+
+    await actors.call("arriveAtDestination");
+};
+
+export const drive = {
+    roadsight,
+    roadsense,
 };

@@ -50,8 +50,8 @@ export class WeightedGraph {
         }
     }
 
-    getEdge(nodeA: string, nodeB: string) {
-        return this._graph[nodeA].find((x) => x.node == nodeB)!;
+    getEdge(nodeA: string, nodeB: string): AdjacencyRecord | undefined {
+        return this._graph[nodeA]?.find((x) => x.node == nodeB);
     }
 
     public updateEdge(
@@ -97,7 +97,7 @@ export class WeightedGraph {
         let sum = 0;
 
         for (let i = 0; i < path.length - 1; i++) {
-            sum += this.getEdge(path[i], path[i + 1]).weight;
+            sum += this.getEdge(path[i], path[i + 1])?.weight ?? 0;
         }
 
         return Math.round(sum * 100) / 100;
@@ -117,7 +117,7 @@ export class WeightedGraph {
         let sum = 0;
 
         for (let i = 0; i < path.length - 1; i++) {
-            sum += this.getEdge(path[i], path[i + 1]).obstructed ? 1 : 0;
+            sum += this.getEdge(path[i], path[i + 1])?.obstructed ? 1 : 0;
         }
 
         return sum;
@@ -166,5 +166,23 @@ export class WeightedGraph {
         }
 
         this.onChange?.();
+    }
+
+    public copy() {
+        const copy = new WeightedGraph();
+        copy._graph = Object.fromEntries(
+            Object.entries(this._graph).map(([k, v]) => {
+                console.log(k, v);
+                return [
+                    k,
+                    v.map((x) => ({
+                        ...x,
+                        disabled: false,
+                        obstructed: false,
+                    })),
+                ];
+            }),
+        );
+        return copy;
     }
 }

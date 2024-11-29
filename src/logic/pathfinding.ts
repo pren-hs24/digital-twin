@@ -1,6 +1,7 @@
 import { PriorityQueue } from "./priorityQueue";
 import { WeightedGraph } from "./graph";
 import { NODE_PENALTY_WEIGHT } from "./pren/constants";
+import { DriveSensor, type IDriveListener } from "./engine";
 
 export interface IOptions {
     graph: WeightedGraph;
@@ -115,3 +116,20 @@ export const dijkstraWithWeightedNodes = (options: IOptions) => {
     }
     return smallest ? path.concat(smallest).reverse() : [];
 };
+
+export class Pathfinder implements IDriveListener {
+    sensor = new DriveSensor();
+
+    navigateToPoint() {}
+    takeExit() {}
+
+    findPath(graph: WeightedGraph, target: string) {
+        const path = dijkstraWithWeightedNodes({
+            graph,
+            from: "START",
+            to: target,
+        });
+        console.log(path);
+        this.sensor.pathFound(path);
+    }
+}

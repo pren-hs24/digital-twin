@@ -28,7 +28,7 @@ watch(
         const def = navigator.network.getEdge(
             edges[0].nodeA,
             edges[0].nodeB,
-        );
+        )!;
 
         weight.value = def.weight;
         obstructed.value = def.obstructed;

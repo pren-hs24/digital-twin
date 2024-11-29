@@ -69,7 +69,7 @@ export class Edge implements EdgeDefinition {
     }
 
     private get graphEdge() {
-        return this._weightedGraph.getEdge(this.nodeA, this.nodeB);
+        return this._weightedGraph.getEdge(this.nodeA, this.nodeB)!;
     }
 
     private createLabel(layer: Konva.Layer) {
@@ -133,7 +133,7 @@ export class Edge implements EdgeDefinition {
         isPartOfRoute: boolean = false,
     ) {
         const line = this._line;
-        const graphEdge = this._weightedGraph.getEdge(edge.nodeA, edge.nodeB);
+        const graphEdge = this._weightedGraph.getEdge(edge.nodeA, edge.nodeB)!;
         line.stroke(COLOUR.PRIMARY);
 
         if (graphEdge.disabled) {

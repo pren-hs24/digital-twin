@@ -53,6 +53,9 @@ class DriveLogger implements IDriveListener {
     async findPath() {
         this.log(`Finding path`);
     }
+    async foundPath(path: string[]) {
+        this.log(`Found path ${path.join(" -> ")}`);
+    }
     async arriveAtDestination() {
         this.log(`Arrived at destination`, "info");
     }

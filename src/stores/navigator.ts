@@ -1,14 +1,16 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { weightedGraph } from "@/logic/pren/graph";
-import { dijkstraWithWeightedNodes } from "@/logic/pathfinding";
 import { SPEED_M_PER_S } from "@/logic/pren/constants";
 import { ListenerManager, SensorManager, drive } from "@/logic/engine";
+import { Pathfinder } from "@/logic/pathfinding";
 
 export const useNavigatorStore = defineStore("navigator", () => {
     const locked = ref(false);
+    const mode = ref<"roadsight" | "roadsense">("roadsight");
     const path = ref<string[]>([]);
     const network = computed(() => weightedGraph);
+    const pathfinder = new Pathfinder();
     const actors = new ListenerManager([]);
     const sensors = new SensorManager([]);
 
@@ -19,16 +21,25 @@ export const useNavigatorStore = defineStore("navigator", () => {
             locked.value = false;
         },
     });
+    actors.addListener(pathfinder);
+    sensors.addSensor(pathfinder.sensor);
 
-    const navigatePath = (route: string[]) => {
-        path.value = route;
+    const navigatePath = (target: string) => {
         locked.value = true;
 
-        drive({
-            path: path.value,
-            sensors: sensors,
-            actors: actors,
-        });
+        if (mode.value === "roadsight") {
+            drive.roadsight({
+                target,
+                sensors,
+                actors,
+            });
+        } else {
+            drive.roadsense({
+                target,
+                sensors,
+                actors,
+            });
+        }
     };
 
     const goTo = (target: string) => {
@@ -37,17 +48,10 @@ export const useNavigatorStore = defineStore("navigator", () => {
         }
 
         if (target === "START") {
-            navigatePath([]);
+            navigatePath(target);
             return;
         }
-
-        const path = dijkstraWithWeightedNodes({
-            graph: weightedGraph,
-            from: "START",
-            to: target,
-        });
-
-        navigatePath(path);
+        navigatePath(target);
     };
 
     const randomiseGraph = () => {
@@ -81,5 +85,6 @@ export const useNavigatorStore = defineStore("navigator", () => {
         sensors: computed(() => sensors),
         actors: computed(() => actors),
         locked,
+        mode,
     };
 });
