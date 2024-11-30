@@ -238,6 +238,8 @@ export const prepareDrive = (graph: Graph) => {
         const node = navigator.path[i];
         const nextNode = navigator.path[i + 1];
 
+        console.log("rotating to", nextNode, "from", node, i, navigator.path);
+
         const shape = graph.getNode(node);
         const nextShape = graph.getNode(nextNode);
 

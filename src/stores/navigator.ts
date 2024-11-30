@@ -7,7 +7,7 @@ import { Pathfinder } from "@/logic/pathfinding";
 
 export const useNavigatorStore = defineStore("navigator", () => {
     const locked = ref(false);
-    const mode = ref<"roadsight" | "roadsense">("roadsight");
+    const mode = ref<"oversight" | "roadsense">("oversight");
     const path = ref<string[]>([]);
     const network = computed(() => weightedGraph);
     const pathfinder = new Pathfinder();
@@ -27,8 +27,8 @@ export const useNavigatorStore = defineStore("navigator", () => {
     const navigatePath = (target: string) => {
         locked.value = true;
 
-        if (mode.value === "roadsight") {
-            drive.roadsight({
+        if (mode.value === "oversight") {
+            drive.oversight({
                 target,
                 sensors,
                 actors,

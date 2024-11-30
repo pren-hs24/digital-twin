@@ -3,6 +3,7 @@ import { useNavigatorStore } from "@/stores/navigator";
 import Logo from "@/assets/logo.svg";
 import SliderNumberInput from "./SliderNumberInput.vue";
 import { useRandomiserStore } from "@/stores/randomiser";
+import { version } from "@/../package.json";
 
 const navigator = useNavigatorStore();
 
@@ -12,9 +13,12 @@ const randomiser = useRandomiserStore();
     <div class="navigator">
         <input v-if="false" type="text" placeholder="Search..." class="search" />
 
-        <div class="title">
+        <div class="title with-bottom-line">
             <img :src="Logo" />
-            <h2>Digital Twin</h2>
+            <div>
+                <h2>UFO</h2>
+                <span class="muted">Digital Twin v{{ version }}</span>
+            </div>
         </div>
 
         <div class="item">
@@ -27,7 +31,9 @@ const randomiser = useRandomiserStore();
                 </div>
             </div>
         </div>
-        <div class="item">
+        <div class="spacer"></div>
+        <div class="item with-bottom-line">
+            <span class="heading">Randomiser</span>
             <details>
                 <summary>Settings</summary>
                 <SliderNumberInput v-model="randomiser.pEdgeDisabled" label="Edge Disabled %" :min="0" :max="1"
@@ -38,9 +44,10 @@ const randomiser = useRandomiserStore();
             </details>
             <button @click="navigator.randomiseGraph">Randomise Graph</button>
         </div>
-        <div class="item">
+        <div class="item with-bottom-line">
+            <span class="heading">Navigation mode</span>
             <select v-model="navigator.mode">
-                <option value="roadsight">RoadSight</option>
+                <option value="oversight">Oversight</option>
                 <option value="roadsense">RoadSense</option>
             </select>
         </div>
@@ -67,6 +74,10 @@ div.navigator {
     gap: 1em;
 }
 
+.spacer {
+    flex-grow: 1;
+}
+
 summary {
     cursor: pointer;
 }
@@ -82,7 +93,7 @@ summary {
         color: var(--text-muted);
     }
 
-    &:not(:last-child) {
+    &.with-bottom-line:not(:last-child) {
         margin-bottom: 1em;
         padding-bottom: 1em;
         border-bottom: 1px solid var(--border);

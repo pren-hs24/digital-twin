@@ -13,13 +13,19 @@ export interface IDriveListener {
     start?: () => void | Promise<void>;
     emergencyStop?: () => void | Promise<void>;
     scanGraph?: () => void | Promise<void>;
-    findPath?: (graph: WeightedGraph, target: string) => void | Promise<void>;
+    findPath?: (
+        graph: WeightedGraph,
+        start: string,
+        target: string,
+    ) => void | Promise<void>;
     foundPath?: (path: string[]) => void | Promise<void>;
     arriveAtDestination?: () => void | Promise<void>;
     closeToObstacle?: () => void | Promise<void>;
     obstacleCleared?: () => void | Promise<void>;
     exitTaken?: () => void | Promise<void>;
     navigatedToPoint?: () => void | Promise<void>;
+    nextNodeBlocked?: (node: string) => void | Promise<void>;
+    nextEdgeBlocked?: (nodeA: string, nodeB: string) => void | Promise<void>;
 }
 
 export interface IDriveSensor {
@@ -360,11 +366,8 @@ export class SensorManager extends DriveSensor {
     }
 
     waitForPathFound() {
-        console.log("waiting for path found", this.pathFoundFuture);
-
         if (this.pathFoundFuture?.alreadyResolved) {
             this.pathFoundFuture = null;
-            console.log("path found already resolved");
             return Promise.resolve();
         }
 
@@ -381,13 +384,27 @@ export const waitFor = async (ms: number) => {
     return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
-const roadsight = async (options: {
+const createEngine = (sensors: SensorManager, actors: ListenerManager) => ({
+    navigateToPoint: async (point: string) => {
+        await actors.call("navigateToPoint", point);
+        await sensors.waitForTargetReached();
+        await actors.call("navigatedToPoint");
+    },
+    takeExit: async (from: string | null, on: string, to: string) => {
+        await actors.call("takeExit", from, on, to);
+        await sensors.waitForTurnCompleted();
+        await actors.call("exitTaken");
+    },
+});
+
+const oversight = async (options: {
     sensors: SensorManager;
     actors: ListenerManager;
     target: string;
 }) => {
     const { target, sensors, actors } = options;
     const navigator = useNavigatorStore();
+    const engine = createEngine(sensors, actors);
 
     const first = "START";
     navigator.path = [first, target];
@@ -407,39 +424,26 @@ const roadsight = async (options: {
     await actors.call("scanGraph");
     await waitFor(1500);
 
-    await actors.call("findPath", navigator.network.copy(), target);
+    await actors.call("findPath", navigator.network, "START", target);
 
-    await actors.call("navigateToPoint", first);
-    await sensors.waitForTargetReached();
-    await actors.call("navigatedToPoint");
+    await engine.navigateToPoint(first);
 
     await sensors.waitForPathFound();
+    await actors.call("foundPath", navigator.path);
 
-    await actors.call("takeExit", null, navigator.path[0], navigator.path[1]);
-    await sensors.waitForTurnCompleted();
-    await actors.call("exitTaken");
+    await engine.takeExit(null, navigator.path[0], navigator.path[1]);
 
     for (let i = 1; i < navigator.path.length - 1; i++) {
-        await actors.call("navigateToPoint", navigator.path[i]);
-        await sensors.waitForTargetReached();
-        await actors.call("navigatedToPoint");
+        await engine.navigateToPoint(navigator.path[i]);
 
-        await actors.call(
-            "takeExit",
+        await engine.takeExit(
             navigator.path[i - 1],
             navigator.path[i],
             navigator.path[i + 1],
         );
-        await sensors.waitForTurnCompleted();
-        await actors.call("exitTaken");
     }
 
-    await actors.call(
-        "navigateToPoint",
-        navigator.path[navigator.path.length - 1],
-    );
-    await sensors.waitForTargetReached();
-    await actors.call("navigatedToPoint");
+    await engine.navigateToPoint(navigator.path[navigator.path.length - 1]);
 
     await actors.call("arriveAtDestination");
 };
@@ -451,6 +455,9 @@ const roadsense = async (options: {
 }) => {
     const { target, sensors, actors } = options;
     const navigator = useNavigatorStore();
+    const actualGraph = navigator.network;
+    const liveGraph = actualGraph.copy();
+    const engine = createEngine(sensors, actors);
 
     const first = "START";
     navigator.path = [first, target];
@@ -470,49 +477,91 @@ const roadsense = async (options: {
     await actors.call("scanGraph");
     await waitFor(1500);
 
-    await actors.call("findPath", navigator.network.copy(), target);
+    await actors.call("findPath", liveGraph, "START", target);
 
-    await actors.call("navigateToPoint", first);
-    await sensors.waitForTargetReached();
-    await actors.call("navigatedToPoint");
-
-    console.log("finding path...");
+    await engine.navigateToPoint(first);
 
     await sensors.waitForPathFound();
+    await actors.call("foundPath", navigator.path);
 
-    console.log(navigator.path);
+    const turnToFirst = async () => {
+        await engine.takeExit(null, navigator.path[0], navigator.path[1]);
+    };
 
-    await actors.call("takeExit", null, navigator.path[0], navigator.path[1]);
-    console.log("exit taken?");
-    await sensors.waitForTurnCompleted();
-    await actors.call("exitTaken");
+    await turnToFirst();
 
     for (let i = 1; i < navigator.path.length - 1; i++) {
-        await actors.call("navigateToPoint", navigator.path[i]);
-        await sensors.waitForTargetReached();
-        await actors.call("navigatedToPoint");
+        const onNode = navigator.path[i - 1];
+        const nextNode = navigator.path[i];
 
-        await actors.call(
-            "takeExit",
+        if (
+            actualGraph.getEdge(onNode, nextNode)?.disabled &&
+            !liveGraph.getEdge(onNode, nextNode)?.disabled
+        ) {
+            liveGraph.getEdge(onNode, navigator.path[i])!.disabled = true;
+            await actors.call("nextEdgeBlocked", onNode, nextNode);
+            await actors.call("findPath", liveGraph, onNode, target);
+            await sensors.waitForPathFound();
+            await actors.call("foundPath", navigator.path);
+            i = 1;
+
+            if (i == 1) {
+                await turnToFirst();
+            } else {
+                await engine.takeExit(
+                    navigator.path[i - 2],
+                    navigator.path[i - 1],
+                    navigator.path[i],
+                );
+            }
+
+            i -= 1;
+            continue;
+        } else if (
+            actualGraph.disabledNodes.includes(navigator.path[i]) &&
+            !liveGraph.disabledNodes.includes(navigator.path[i])
+        ) {
+            liveGraph.disabledNodes.push(navigator.path[i]);
+            await actors.call("nextNodeBlocked", navigator.path[i]);
+            await actors.call(
+                "findPath",
+                liveGraph,
+                navigator.path[i - 1],
+                target,
+            );
+            await sensors.waitForPathFound();
+            await actors.call("foundPath", navigator.path);
+            i = 1;
+
+            if (i == 1) {
+                await turnToFirst();
+            } else {
+                await engine.takeExit(
+                    navigator.path[i - 2],
+                    navigator.path[i - 1],
+                    navigator.path[i],
+                );
+            }
+
+            i -= 1;
+            continue;
+        }
+
+        await engine.navigateToPoint(navigator.path[i]);
+
+        await engine.takeExit(
             navigator.path[i - 1],
             navigator.path[i],
             navigator.path[i + 1],
         );
-        await sensors.waitForTurnCompleted();
-        await actors.call("exitTaken");
     }
 
-    await actors.call(
-        "navigateToPoint",
-        navigator.path[navigator.path.length - 1],
-    );
-    await sensors.waitForTargetReached();
-    await actors.call("navigatedToPoint");
+    await engine.navigateToPoint(navigator.path[navigator.path.length - 1]);
 
     await actors.call("arriveAtDestination");
 };
 
 export const drive = {
-    roadsight,
+    oversight,
     roadsense,
 };

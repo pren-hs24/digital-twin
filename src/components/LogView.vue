@@ -32,7 +32,11 @@ class DriveLogger implements IDriveListener {
         this.log(`Navigated to point`);
     }
     async takeExit(from: string | null, on: string, to: string) {
-        this.log(`Taking exit from ${from} on ${on} to ${to}`, "info");
+        if (from === null) {
+            this.log(`Taking exit on ${on} to ${to}`, "info");
+        } else {
+            this.log(`Taking exit from ${from} on ${on} to ${to}`, "info");
+        }
     }
     async exitTaken() {
         this.log(`Exit taken`);
@@ -64,6 +68,12 @@ class DriveLogger implements IDriveListener {
     }
     async obstacleCleared() {
         this.log("Obstacle cleared", "debug");
+    }
+    async nextNodeBlocked(node: string) {
+        this.log(`Next node (${node}) blocked`, "warning");
+    }
+    async nextEdgeBlocked(from: string, to: string) {
+        this.log(`Next edge (${from} -> ${to}) blocked`, "warning");
     }
 }
 

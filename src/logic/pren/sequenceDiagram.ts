@@ -18,6 +18,8 @@ export class SequenceDiagram implements IDriveListener {
     participant Engine as Simulator
     participant ImageRecognition as Image Recognition
     participant Pathfinding
+    participant snsLine as Line Sensor 
+    participant snsDist as Distance Sensor
 `;
         this.sync();
     }
@@ -67,6 +69,7 @@ export class SequenceDiagram implements IDriveListener {
     }
 
     takeExit(from: string | null, on: string, to: string) {
+        console.log("Taking exit", from, on, to);
         const exit = getRoundaboutExit(from, on, to);
         this.mermaidCode += `    Engine->>+Car: Take exit ${exit}\n`;
         this.sync();
@@ -95,6 +98,16 @@ export class SequenceDiagram implements IDriveListener {
 
     obstacleCleared() {
         this.mermaidCode += `    ObstacleClearer-->>-Car: Obstacle cleared\n`;
+        this.sync();
+    }
+
+    nextEdgeBlocked() {
+        this.mermaidCode += `    snsLine-)Engine: Edge not found\n`;
+        this.sync();
+    }
+
+    nextNodeBlocked() {
+        this.mermaidCode += `    snsDist-)Engine: Node blocked\n`;
         this.sync();
     }
 }
