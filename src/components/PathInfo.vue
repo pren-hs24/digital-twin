@@ -17,7 +17,7 @@ const routeInfoExpanded = ref(false);
             <div>
                 <span class="standout">{{
                     navigator.estimatedDuration.seconds
-                }}</span>
+                    }}</span>
                 <span class="muted">sec</span>
             </div>
             <div>
@@ -35,15 +35,15 @@ const routeInfoExpanded = ref(false);
         <div v-if="routeInfoExpanded" class="additional">
             <div class="fact">
                 <span class="muted">Start:</span>
-                <span>{{ navigator.path[0] }}</span>
+                <span>{{ navigator.fullPath[0] }}</span>
             </div>
             <div class="fact">
                 <span class="muted">End:</span>
-                <span>{{ navigator.path[navigator.path.length - 1] }}</span>
+                <span>{{ navigator.fullPath[navigator.path.length - 1] }}</span>
             </div>
             <div class="fact">
                 <span class="muted">Path:</span>
-                <span>{{ navigator.path.join(" -> ") }}</span>
+                <span>{{ navigator.fullPath.join(" -> ") }}</span>
             </div>
         </div>
     </div>

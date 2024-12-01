@@ -490,16 +490,13 @@ const roadsense = async (options: {
 
     await turnToFirst();
 
-    for (let i = 1; i < navigator.path.length - 1; i++) {
+    for (let i = 1; i < navigator.path.length; i++) {
         const onNode = navigator.path[i - 1];
         const nextNode = navigator.path[i];
 
-        if (
-            actualGraph.getEdge(onNode, nextNode)?.disabled &&
-            !liveGraph.getEdge(onNode, nextNode)?.disabled
-        ) {
-            liveGraph.getEdge(onNode, navigator.path[i])!.disabled = true;
-            await actors.call("nextEdgeBlocked", onNode, nextNode);
+        const recalculate = async () => {
+            const pathFragment = navigator.path.slice(0, i - 1);
+            navigator.additionalPathFragments.push(...pathFragment);
             await actors.call("findPath", liveGraph, onNode, target);
             await sensors.waitForPathFound();
             await actors.call("foundPath", navigator.path);
@@ -516,47 +513,30 @@ const roadsense = async (options: {
             }
 
             i -= 1;
+        };
+
+        if (actualGraph.getEdge(onNode, nextNode)?.disabled) {
+            liveGraph.getEdge(onNode, navigator.path[i])!.disabled = true;
+            await actors.call("nextEdgeBlocked", onNode, nextNode);
+            await recalculate();
             continue;
-        } else if (
-            actualGraph.disabledNodes.includes(navigator.path[i]) &&
-            !liveGraph.disabledNodes.includes(navigator.path[i])
-        ) {
+        } else if (actualGraph.disabledNodes.includes(navigator.path[i])) {
             liveGraph.disabledNodes.push(navigator.path[i]);
             await actors.call("nextNodeBlocked", navigator.path[i]);
-            await actors.call(
-                "findPath",
-                liveGraph,
-                navigator.path[i - 1],
-                target,
-            );
-            await sensors.waitForPathFound();
-            await actors.call("foundPath", navigator.path);
-            i = 1;
-
-            if (i == 1) {
-                await turnToFirst();
-            } else {
-                await engine.takeExit(
-                    navigator.path[i - 2],
-                    navigator.path[i - 1],
-                    navigator.path[i],
-                );
-            }
-
-            i -= 1;
+            await recalculate();
             continue;
         }
 
         await engine.navigateToPoint(navigator.path[i]);
 
-        await engine.takeExit(
-            navigator.path[i - 1],
-            navigator.path[i],
-            navigator.path[i + 1],
-        );
+        if (i < navigator.path.length - 1) {
+            await engine.takeExit(
+                navigator.path[i - 1],
+                navigator.path[i],
+                navigator.path[i + 1],
+            );
+        }
     }
-
-    await engine.navigateToPoint(navigator.path[navigator.path.length - 1]);
 
     await actors.call("arriveAtDestination");
 };

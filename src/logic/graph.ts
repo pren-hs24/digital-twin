@@ -18,7 +18,6 @@ export class WeightedGraph {
     _graph: GraphWeightings;
     disabledNodes = [] as string[];
     obstructedEdges = [] as EdgeDefinition[];
-    disabledEdges = [] as EdgeDefinition[];
 
     public onChange: (() => void) | null = null;
 
@@ -51,6 +50,7 @@ export class WeightedGraph {
     }
 
     getEdge(nodeA: string, nodeB: string): AdjacencyRecord | undefined {
+        console.log(this._graph[nodeA]?.find((x) => x.node == nodeB));
         return this._graph[nodeA]?.find((x) => x.node == nodeB);
     }
 

@@ -9,6 +9,7 @@ export const useNavigatorStore = defineStore("navigator", () => {
     const locked = ref(false);
     const mode = ref<"oversight" | "roadsense">("oversight");
     const path = ref<string[]>([]);
+    const additionalPathFragments = ref<string[]>([]);
     const network = computed(() => weightedGraph);
     const pathfinder = new Pathfinder();
     const actors = new ListenerManager([]);
@@ -47,6 +48,8 @@ export const useNavigatorStore = defineStore("navigator", () => {
             throw new Error("Car is already moving!");
         }
 
+        additionalPathFragments.value = [];
+
         if (target === "START") {
             navigatePath(target);
             return;
@@ -58,12 +61,16 @@ export const useNavigatorStore = defineStore("navigator", () => {
         weightedGraph.randomise();
     };
 
+    const fullPath = computed(() => {
+        return additionalPathFragments.value.concat(path.value);
+    });
+
     const obstaclesInPath = computed(() => {
-        return weightedGraph.obstaclesInPath(path.value);
+        return weightedGraph.obstaclesInPath(fullPath.value);
     });
 
     const estimatedDuration = computed(() => {
-        const distance = weightedGraph.pathDistance(path.value);
+        const distance = weightedGraph.pathDistance(fullPath.value);
         const time = Math.round((100 * distance) / SPEED_M_PER_S) / 100;
         return {
             seconds: time,
@@ -71,11 +78,13 @@ export const useNavigatorStore = defineStore("navigator", () => {
     });
 
     const estimatedDistance = computed(() => {
-        return weightedGraph.pathPhysicalDistance(path.value);
+        return weightedGraph.pathPhysicalDistance(fullPath.value);
     });
 
     return {
         path,
+        additionalPathFragments,
+        fullPath,
         network,
         goTo,
         randomiseGraph,
