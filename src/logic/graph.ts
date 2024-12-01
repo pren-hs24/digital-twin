@@ -144,8 +144,8 @@ export class WeightedGraph {
                 if (nodesDone.includes(edge.node)) continue;
 
                 edge.weight = this.randNumber(0.5, 2.5); // 0 to 2.5
-                edge.disabled = this.randNumber() < settings.pEdgeDisabled;
-                edge.obstructed = this.randNumber() < settings.pObstacle;
+                edge.disabled = this.randNumber() <= settings.pEdgeDisabled;
+                edge.obstructed = this.randNumber() <= settings.pObstacle;
 
                 // other way
                 const otherEdge = this._graph[edge.node].find(
@@ -157,7 +157,7 @@ export class WeightedGraph {
             }
 
             if (!["START", "A", "B", "C"].includes(node)) {
-                if (this.randNumber() < settings.pNodeDisabled) {
+                if (this.randNumber() <= settings.pNodeDisabled) {
                     this.disabledNodes.push(node);
                 }
             }

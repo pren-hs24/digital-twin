@@ -69,7 +69,7 @@ export class Graph {
             this.nodes[node].update(
                 this.weightedGraph.disabledNodes.includes(node),
             );
-            for (const edge of this._weightedGraph.graph?.[node] ?? []) {
+            for (const edge of this._weightedGraph._graph?.[node] ?? []) {
                 this.updateEdge({ nodeA: node, nodeB: edge.node });
             }
         }
