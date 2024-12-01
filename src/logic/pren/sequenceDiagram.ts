@@ -69,7 +69,6 @@ export class SequenceDiagram implements IDriveListener {
     }
 
     takeExit(from: string | null, on: string, to: string) {
-        console.log("Taking exit", from, on, to);
         const exit = getRoundaboutExit(from, on, to);
         this.mermaidCode += `    Engine->>+Car: Take exit ${exit}\n`;
         this.sync();

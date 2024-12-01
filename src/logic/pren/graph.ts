@@ -45,7 +45,6 @@ export const getRoundaboutExit = (
     to: string,
 ) => {
     const exits = ROUNDABOUTS[on as keyof typeof ROUNDABOUTS];
-    console.log("Exits", exits, on, ROUNDABOUTS, to);
     const outIndex = exits.indexOf(to);
 
     if (!from) {

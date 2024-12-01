@@ -171,6 +171,9 @@ export const DriveConsoleLogger: IDriveListener = {
     findPath: async () => {
         console.log(`Finding path`);
     },
+    foundPath: async (path: string[]) => {
+        console.log(`Found path: ${path.join(" -> ")}`);
+    },
     arriveAtDestination: async () => {
         console.log(`Arrived at destination`);
     },
@@ -282,7 +285,6 @@ export class SensorManager extends DriveSensor {
     };
 
     private onPathFound = (path: string[]) => {
-        console.log("path found", path);
         this.pathFound(path);
 
         if (this.pathFoundFuture) {

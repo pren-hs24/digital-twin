@@ -124,13 +124,11 @@ export class Pathfinder implements IDriveListener {
     takeExit() {}
 
     findPath(graph: WeightedGraph, start: string, target: string) {
-        console.log("Finding path from", start, "to", target, graph);
         const path = dijkstraWithWeightedNodes({
             graph,
             from: start,
             to: target,
         });
-        console.log(path);
         this.sensor.pathFound(path);
     }
 }

@@ -50,7 +50,6 @@ export class WeightedGraph {
     }
 
     getEdge(nodeA: string, nodeB: string): AdjacencyRecord | undefined {
-        console.log(this._graph[nodeA]?.find((x) => x.node == nodeB));
         return this._graph[nodeA]?.find((x) => x.node == nodeB);
     }
 
@@ -172,7 +171,6 @@ export class WeightedGraph {
         const copy = new WeightedGraph();
         copy._graph = Object.fromEntries(
             Object.entries(this._graph).map(([k, v]) => {
-                console.log(k, v);
                 return [
                     k,
                     v.map((x) => ({
