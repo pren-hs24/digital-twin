@@ -1,6 +1,6 @@
-# .
+# UFO: Digital Twin
 
-This template should help get you started developing with Vue 3 in Vite.
+The digital twin for PREN project "UFO" by Team 2.
 
 ## Recommended IDE Setup
 
