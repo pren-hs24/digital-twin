@@ -399,6 +399,18 @@ const createEngine = (sensors: SensorManager, actors: ListenerManager) => ({
     },
 });
 
+const listeners = (actors: ListenerManager, navigator: { path: string[] }) => ({
+    onObstacle: () => {
+        actors.call("closeToObstacle");
+    },
+    onObstacleCleared: () => {
+        actors.call("obstacleCleared");
+    },
+    onPathFound: (p: string[]) => {
+        navigator.path = p;
+    },
+});
+
 const oversight = async (options: {
     sensors: SensorManager;
     actors: ListenerManager;
@@ -411,15 +423,14 @@ const oversight = async (options: {
     const first = "START";
     navigator.path = [first, target];
 
-    sensors.addOnObstacleListener(() => {
-        actors.call("closeToObstacle");
-    });
-    sensors.addOnObstacleClearedListener(() => {
-        actors.call("obstacleCleared");
-    });
-    sensors.addOnPathFoundListener((p) => {
-        navigator.path = p;
-    });
+    const { onObstacle, onObstacleCleared, onPathFound } = listeners(
+        actors,
+        navigator,
+    );
+
+    sensors.addOnObstacleListener(onObstacle);
+    sensors.addOnObstacleClearedListener(onObstacleCleared);
+    sensors.addOnPathFoundListener(onPathFound);
 
     await actors.call("selectTarget", target);
     await actors.call("start");
@@ -448,6 +459,10 @@ const oversight = async (options: {
     await engine.navigateToPoint(navigator.path[navigator.path.length - 1]);
 
     await actors.call("arriveAtDestination");
+
+    sensors.removeOnObstacleListener(onObstacle);
+    sensors.removeOnObstacleClearedListener(onObstacleCleared);
+    sensors.removeOnPathFoundListener(onPathFound);
 };
 
 const roadsense = async (options: {
@@ -464,15 +479,14 @@ const roadsense = async (options: {
     const first = "START";
     navigator.path = [first, target];
 
-    sensors.addOnObstacleListener(() => {
-        actors.call("closeToObstacle");
-    });
-    sensors.addOnObstacleClearedListener(() => {
-        actors.call("obstacleCleared");
-    });
-    sensors.addOnPathFoundListener((p) => {
-        navigator.path = p;
-    });
+    const { onObstacle, onObstacleCleared, onPathFound } = listeners(
+        actors,
+        navigator,
+    );
+
+    sensors.addOnObstacleListener(onObstacle);
+    sensors.addOnObstacleClearedListener(onObstacleCleared);
+    sensors.addOnPathFoundListener(onPathFound);
 
     await actors.call("selectTarget", target);
     await actors.call("start");
@@ -541,6 +555,10 @@ const roadsense = async (options: {
     }
 
     await actors.call("arriveAtDestination");
+
+    sensors.removeOnObstacleListener(onObstacle);
+    sensors.removeOnObstacleClearedListener(onObstacleCleared);
+    sensors.removeOnPathFoundListener(onPathFound);
 };
 
 export const drive = {
